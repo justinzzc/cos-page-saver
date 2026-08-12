@@ -35,20 +35,39 @@ export function htmlToMarkdown(root) {
 
 export function createMarkdown(page) {
   const title = (page.title || "未命名页面").trim();
-  const capturedAt = new Date().toISOString();
+  const capturedAt = formatChinaTime();
   const meta = [
     `title: ${title.replace(/\n/g, " ")}`,
     `source: ${page.url}`,
     page.byline ? `author: ${page.byline.replace(/\n/g, " ")}` : "",
     page.excerpt ? `excerpt: ${page.excerpt.replace(/\n/g, " ")}` : "",
-    `captured_at: ${capturedAt}`
+    `captured_at: ${capturedAt}`,
+    "timezone: Asia/Shanghai"
   ].filter(Boolean).join("\n");
   return `---\n${meta}\n---\n\n# ${title}\n\n${page.markdown || page.textContent || "页面没有可保存的正文内容。"}\n`;
 }
 
-export function makeObjectKey(title, date = new Date()) {
+export function formatChinaTime(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}+08:00`;
+}
+
+export function makeObjectKey(title, date = new Date(), sourceUrl = "") {
   // COS browser-side signing is kept ASCII-only so Unicode path normalization cannot alter the signature.
-  const safeTitle = title.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 80) || "page";
+  const asciiTitle = title.match(/[a-zA-Z0-9][a-zA-Z0-9._ -]{1,79}/g)?.join("-") || "";
+  let fallback = "page";
+  if (!asciiTitle && sourceUrl) {
+    try {
+      const url = new URL(sourceUrl);
+      fallback = `${url.hostname}${url.pathname}`.match(/[a-zA-Z0-9][a-zA-Z0-9._ -]{1,79}/g)?.join("-") || fallback;
+    } catch { /* Keep generic fallback for malformed source URLs. */ }
+  }
+  const safeTitle = (asciiTitle || fallback).replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 80) || "page";
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");

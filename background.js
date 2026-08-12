@@ -87,6 +87,11 @@ function extractPage() {
     return result;
   }
   function escape(value) { return value.replace(/[\\`*_[\]{}<>]/g, "\\$&").replace(/\s+$/g, ""); }
+  function imageUrl(node) {
+    const source = node.getAttribute("data-src") || node.getAttribute("data-original") || node.getAttribute("data-lazy-src") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0];
+    if (!source || source.startsWith("data:")) return "";
+    try { return new URL(source, location.href).href; } catch { return ""; }
+  }
   function inline(node) {
     if (node.nodeType === Node.TEXT_NODE) return escape(node.nodeValue || "");
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
@@ -96,7 +101,7 @@ function extractPage() {
     if (tag === "em" || tag === "i") return `*${content.trim()}*`;
     if (tag === "code") return `\`${content.trim()}\``;
     if (tag === "a") return `[${content.trim() || node.href}](${node.href})`;
-    if (tag === "img") return `![${node.alt || "图片"}](${node.src})`;
+    if (tag === "img") { const source = imageUrl(node); return source ? `![${node.alt || "图片"}](${source})` : ""; }
     if (tag === "br") return "\n";
     return content;
   }
@@ -129,6 +134,10 @@ function extractPage() {
   const clone = document.cloneNode(true);
   clone.querySelectorAll("script,style,noscript,link,nav,header,footer,aside,form,iframe,template,button,[aria-hidden='true'],[role='navigation'],[role='complementary']").forEach((node) => node.remove());
   clone.querySelectorAll("[class*='comment' i],[class*='advert' i],[class*='recommend' i],[id*='comment' i],[id*='advert' i]").forEach((node) => node.remove());
+  clone.querySelectorAll("img").forEach((node) => {
+    const source = node.getAttribute("data-src") || node.getAttribute("data-original") || node.getAttribute("data-lazy-src") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0];
+    if (source) node.setAttribute("src", source);
+  });
   const candidates = [...clone.querySelectorAll("article,main,[role='main'],section,div")].sort((a, b) => score(b) - score(a));
   const content = candidates[0] || clone.body;
   if (!content) throw new Error("无法读取当前页面内容。");
@@ -148,7 +157,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const page = result?.result;
     if (!page) throw new Error("无法提取当前页面内容，请确认页面允许脚本运行。");
     const markdown = createMarkdown(page);
-    const key = `${String(settings.objectPrefix || "clips").replace(/^\/+|\/+$/g, "")}/${makeObjectKey(page.title).replace(/^clips\//, "")}`;
+    const key = `${String(settings.objectPrefix || "clips").replace(/^\/+|\/+$/g, "")}/${makeObjectKey(page.title, new Date(), page.url).replace(/^clips\//, "")}`;
     return uploadToCos(settings, key, markdown);
   })().then((result) => sendResponse({ ok: true, result })).catch((error) => sendResponse({ ok: false, error: error.message || "保存失败。" }));
   return true;
