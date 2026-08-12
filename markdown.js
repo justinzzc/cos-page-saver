@@ -36,7 +36,14 @@ export function htmlToMarkdown(root) {
 export function createMarkdown(page) {
   const title = (page.title || "未命名页面").trim();
   const capturedAt = new Date().toISOString();
-  return `---\ntitle: ${title.replace(/\n/g, " ")}\nsource: ${page.url}\ncaptured_at: ${capturedAt}\n---\n\n# ${title}\n\n${page.markdown || page.textContent || "页面没有可保存的正文内容。"}\n`;
+  const meta = [
+    `title: ${title.replace(/\n/g, " ")}`,
+    `source: ${page.url}`,
+    page.byline ? `author: ${page.byline.replace(/\n/g, " ")}` : "",
+    page.excerpt ? `excerpt: ${page.excerpt.replace(/\n/g, " ")}` : "",
+    `captured_at: ${capturedAt}`
+  ].filter(Boolean).join("\n");
+  return `---\n${meta}\n---\n\n# ${title}\n\n${page.markdown || page.textContent || "页面没有可保存的正文内容。"}\n`;
 }
 
 export function makeObjectKey(title, date = new Date()) {

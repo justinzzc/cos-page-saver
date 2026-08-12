@@ -17,7 +17,7 @@
 2. 配置保存到 `chrome.storage.local`，不发送到自有服务。
 3. Popup 向 service worker 发送保存请求。
 4. Service worker 用 `chrome.scripting.executeScript` 在当前标签页执行提取逻辑。
-5. 页面提取逻辑删除导航、脚本、样式等噪声，按 `article/main/section` 内容评分选择正文，并转换为 Markdown。
+5. 页面提取逻辑参考 FeishuClip 的 Readability 流程：克隆 DOM，移除脚本、样式、导航、评论、广告和推荐区域，结合正文长度、段落数量、链接密度及 class/id 语义评分选择正文，并读取 meta/JSON-LD 中的标题、作者和摘要。
 6. Service worker 添加标题、来源 URL、剪存时间等 YAML 元数据。
 7. Service worker 按 COS XML API 的签名算法生成 Authorization，并用 HTTPS PUT 直传 Bucket。
 

@@ -58,6 +58,34 @@ async function testCosConnection(settings) {
 
 function extractPage() {
   function text(node) { return (node?.textContent || "").replace(/\s+/g, " ").trim(); }
+  function firstMeta(selectors) {
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      const value = node?.getAttribute("content")?.trim();
+      if (value) return value;
+    }
+    return "";
+  }
+  function metadata() {
+    const result = {
+      title: firstMeta(["meta[property='og:title']", "meta[name='twitter:title']", "meta[name='title']"]),
+      byline: firstMeta(["meta[name='author']", "meta[property='article:author']", "meta[name='byline']"]),
+      excerpt: firstMeta(["meta[name='description']", "meta[property='og:description']", "meta[name='twitter:description']"])
+    };
+    for (const node of document.querySelectorAll("script[type='application/ld+json']")) {
+      try {
+        const parsed = JSON.parse(node.textContent || "{}");
+        const entries = Array.isArray(parsed) ? parsed : parsed["@graph"] || [parsed];
+        const article = entries.find((entry) => /article|newsarticle|blogposting/i.test(String(entry?.["@type"] || "")));
+        if (!article) continue;
+        result.title ||= article.headline || article.name || "";
+        result.excerpt ||= article.description || "";
+        const author = Array.isArray(article.author) ? article.author[0] : article.author;
+        result.byline ||= typeof author === "string" ? author : author?.name || "";
+      } catch { /* Ignore malformed page metadata. */ }
+    }
+    return result;
+  }
   function escape(value) { return value.replace(/[\\`*_[\]{}<>]/g, "\\$&").replace(/\s+$/g, ""); }
   function inline(node) {
     if (node.nodeType === Node.TEXT_NODE) return escape(node.nodeValue || "");
@@ -92,14 +120,21 @@ function extractPage() {
     if (!value || value.length < 200) return -1;
     const links = node.querySelectorAll("a").length;
     const paragraphs = node.querySelectorAll("p").length;
-    return value.length + paragraphs * 100 - links * 20;
+    const className = `${node.id || ""} ${node.className || ""}`;
+    const positive = /(article|content|正文|文章|post|entry|main|story|阅读)/i.test(className) ? 400 : 0;
+    const negative = /(comment|评论|footer|header|nav|menu|sidebar|related|推荐|广告|分享)/i.test(className) ? 500 : 0;
+    const linkDensity = links / Math.max(value.length / 80, 1);
+    return value.length + paragraphs * 120 + positive - negative - linkDensity * 100;
   }
   const clone = document.cloneNode(true);
-  clone.querySelectorAll("script,style,noscript,nav,header,footer,aside,form,iframe,button,[aria-hidden='true']").forEach((node) => node.remove());
-  const candidates = [...clone.querySelectorAll("article,main,[role='main'],section")].sort((a, b) => score(b) - score(a));
+  clone.querySelectorAll("script,style,noscript,link,nav,header,footer,aside,form,iframe,template,button,[aria-hidden='true'],[role='navigation'],[role='complementary']").forEach((node) => node.remove());
+  clone.querySelectorAll("[class*='comment' i],[class*='advert' i],[class*='recommend' i],[id*='comment' i],[id*='advert' i]").forEach((node) => node.remove());
+  const candidates = [...clone.querySelectorAll("article,main,[role='main'],section,div")].sort((a, b) => score(b) - score(a));
   const content = candidates[0] || clone.body;
   if (!content) throw new Error("无法读取当前页面内容。");
-  return { title: document.title, url: location.href, textContent: text(content), markdown: toMarkdown(content) };
+  const pageMeta = metadata();
+  const title = pageMeta.title || document.title || text(content.querySelector("h1")) || "未命名页面";
+  return { title, byline: pageMeta.byline, excerpt: pageMeta.excerpt, url: location.href, textContent: text(content), markdown: toMarkdown(content) };
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
