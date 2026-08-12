@@ -13,6 +13,18 @@ COS 对象路径可以保留中文标题：请求 URL 使用 UTF-8 百分号编�
 3. 点击扩展图标，进入“打开 COS 配置”，填写 Endpoint、Region、SecretId、SecretKey 和 Bucket。
 4. 在 COS Bucket 的 CORS 中允许扩展发起 `PUT` 请求，至少放行 `Content-Type` 和 `Host` 请求头。
 
+## 打包
+
+在 PowerShell 中运行：
+
+```powershell
+.\scripts\package.ps1
+```
+
+产物会生成到 `dist/`，该目录已加入 `.gitignore`，可直接在 Chrome Web Store 开发者后台上传 ZIP，或作为备份文件保存。
+
+图标源文件为 `icons/icon.svg`，PNG 尺寸由 `scripts/generate-icons.ps1` 生成。
+
 ## 目录说明
 
 - `options.html`：COS 配置页面。
