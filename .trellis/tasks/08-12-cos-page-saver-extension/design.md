@@ -28,7 +28,7 @@
 - Chrome 内置页、PDF、禁止脚本注入的页面可能无法提取，Popup 必须显示可读错误。
 - MVP 保留正文中的原始图片 URL，不下载或重新上传图片资源。
 - 图片提取需要兼容 `data-src`、`data-original`、`data-lazy-src`、`srcset` 和 `src` 懒加载字段，并转换为绝对 URL。
-- Markdown 的 `captured_at` 使用 `Asia/Shanghai` 的 `+08:00` 偏移；COS 对象 key 保持 ASCII，纯中文标题时回退到来源域名和路径片段。
+- Markdown 的 `captured_at` 使用 `Asia/Shanghai` 的 `+08:00` 偏移；COS 请求 URL 对对象路径做 UTF-8 百分号编码，但签名规范串使用原始 UTF-8 路径，从而支持中文标题文件名。
 
 ## 回滚
 

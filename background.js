@@ -21,12 +21,13 @@ async function uploadToCos(settings, key, body) {
   const endpoint = normalizeEndpoint(settings.endpoint);
   const host = settings.urlStyle === "pathStyle" ? endpoint : `${settings.bucket}.${endpoint}`;
   const path = settings.urlStyle === "pathStyle" ? `/${settings.bucket}/${key}` : `/${key}`;
-  const url = `https://${host}${encodePath(path)}`;
+  const requestPath = encodePath(path);
+  const url = `https://${host}${requestPath}`;
   const start = Math.floor(Date.now() / 1000) - 60;
   const end = start + 900;
   const keyTime = `${start};${end}`;
   const signedHeaders = "";
-  const httpString = `put\n${encodePath(path)}\n\n\n`;
+  const httpString = `put\n${path}\n\n\n`;
   const signKey = await hmacSha1(settings.secretKey, keyTime);
   const stringToSign = `sha1\n${keyTime}\n${await sha1(httpString)}\n`;
   const signature = await hmacSha1(signKey, stringToSign);

@@ -4,7 +4,7 @@
 
 当前版本使用 COS 无请求头签名模式，避免浏览器无法控制的 `Host` 请求头导致 `SignatureDoesNotMatch`。
 
-COS 对象路径使用 ASCII 文件名，网页中文标题会保留在 Markdown 的 `title` 元数据和正文标题中，以避免浏览器端 Unicode 路径规范化造成签名不一致。
+COS 对象路径可以保留中文标题：请求 URL 使用 UTF-8 百分号编码，但 COS 签名规范串使用原始对象路径，避免 Unicode 路径签名不一致。
 
 ## 安装
 

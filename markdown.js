@@ -58,16 +58,7 @@ export function formatChinaTime(date = new Date()) {
 }
 
 export function makeObjectKey(title, date = new Date(), sourceUrl = "") {
-  // COS browser-side signing is kept ASCII-only so Unicode path normalization cannot alter the signature.
-  const asciiTitle = title.match(/[a-zA-Z0-9][a-zA-Z0-9._ -]{1,79}/g)?.join("-") || "";
-  let fallback = "page";
-  if (!asciiTitle && sourceUrl) {
-    try {
-      const url = new URL(sourceUrl);
-      fallback = `${url.hostname}${url.pathname}`.match(/[a-zA-Z0-9][a-zA-Z0-9._ -]{1,79}/g)?.join("-") || fallback;
-    } catch { /* Keep generic fallback for malformed source URLs. */ }
-  }
-  const safeTitle = (asciiTitle || fallback).replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 80) || "page";
+  const safeTitle = title.replace(/[\\/:*?"<>|#%&{}$!@+`=]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 100) || "未命名页面";
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
