@@ -11,21 +11,21 @@ foreach ($size in @(16, 32, 48, 128)) {
   $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
   $scale = $size / 128.0
   $graphics.ScaleTransform($scale, $scale)
-  $green = [System.Drawing.ColorTranslator]::FromHtml("#00A870")
+  $purple = [System.Drawing.ColorTranslator]::FromHtml("#6D4AFF")
+  $lightPurple = [System.Drawing.ColorTranslator]::FromHtml("#DCD4FF")
   $white = [System.Drawing.Color]::White
-  $graphics.Clear($green)
-  $cloud = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $cloud.AddEllipse(33, 45, 45, 35)
-  $cloud.AddEllipse(51, 23, 42, 54)
-  $cloud.AddEllipse(73, 44, 37, 38)
-  $cloud.AddRectangle((New-Object System.Drawing.Rectangle(35, 55, 65, 35)))
-  $graphics.FillPath((New-Object System.Drawing.SolidBrush($white)), $cloud)
-  $brush = New-Object System.Drawing.SolidBrush($green)
-  $graphics.FillRectangle($brush, 57, 38, 14, 52)
-  $graphics.FillRectangle($brush, 40, 57, 48, 14)
+  $graphics.Clear($purple)
+  $doc = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $doc.AddPolygon(@([System.Drawing.Point]::new(37, 24), [System.Drawing.Point]::new(73, 24), [System.Drawing.Point]::new(91, 42), [System.Drawing.Point]::new(91, 104), [System.Drawing.Point]::new(37, 104)))
+  $graphics.FillPath((New-Object System.Drawing.SolidBrush($white)), $doc)
+  $brush = New-Object System.Drawing.SolidBrush($purple)
+  $graphics.FillPolygon($brush, @([System.Drawing.Point]::new(59, 47), [System.Drawing.Point]::new(67, 47), [System.Drawing.Point]::new(67, 72), [System.Drawing.Point]::new(74, 65), [System.Drawing.Point]::new(80, 71), [System.Drawing.Point]::new(63, 88), [System.Drawing.Point]::new(46, 71), [System.Drawing.Point]::new(52, 65), [System.Drawing.Point]::new(59, 72)))
+  $graphics.FillPolygon((New-Object System.Drawing.SolidBrush($lightPurple)), @([System.Drawing.Point]::new(73, 24), [System.Drawing.Point]::new(91, 42), [System.Drawing.Point]::new(73, 42)))
+  $pen = New-Object System.Drawing.Pen($lightPurple, 6)
+  $graphics.DrawLine($pen, 45, 95, 83, 95)
   $output = Join-Path $iconDir ("icon-$size.png")
   $bitmap.Save($output, [System.Drawing.Imaging.ImageFormat]::Png)
-  $brush.Dispose(); $cloud.Dispose(); $graphics.Dispose(); $bitmap.Dispose()
+  $pen.Dispose(); $brush.Dispose(); $doc.Dispose(); $graphics.Dispose(); $bitmap.Dispose()
 }
 
 Write-Output "Generated icons/icon-16.png, icon-32.png, icon-48.png, icon-128.png"
