@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend quality and structure index for checking the extension implementation."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Check shared settings, message, Markdown, and COS helpers for avoidable duplication."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Check data contracts across options, popup, background, and content extraction."}
+{"file":".trellis/tasks/08-12-cos-page-saver-extension/prd.md","reason":"Acceptance criteria source of truth for final verification."}
+{"file":".trellis/tasks/08-12-cos-page-saver-extension/design.md","reason":"Technical design source of truth for contract and risk review."}

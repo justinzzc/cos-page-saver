@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "COS 页面剪存",
+  "version": "0.1.4",
+  "description": "一键提取当前网页正文并保存为 Markdown 到腾讯云 COS。",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "action": {
+    "default_title": "保存当前页面",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "background": { "service_worker": "background.js", "type": "module" }
+}

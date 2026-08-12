@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend guidance index for the greenfield extension UI and TypeScript surfaces."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The feature crosses options UI, popup UI, content extraction, background messaging, and COS upload contracts."}
+{"file":".trellis/tasks/08-12-cos-page-saver-extension/design.md","reason":"Task-specific architecture, data flow, contracts, and implementation constraints."}
+{"file":".trellis/tasks/08-12-cos-page-saver-extension/implement.md","reason":"Ordered implementation checklist and validation gates."}
