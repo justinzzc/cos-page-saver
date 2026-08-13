@@ -103,7 +103,8 @@ function extractPage() {
   }
   function escape(value) { return value.replace(/[\\`*_[\]{}<>]/g, "\\$&").replace(/\s+$/g, ""); }
   function imageUrl(node) {
-    const source = node.getAttribute("data-src") || node.getAttribute("data-original") || node.getAttribute("data-lazy-src") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0];
+    const pictureSource = node.parentElement?.querySelector("source[data-srcset],source[srcset]")?.getAttribute("data-srcset") || node.parentElement?.querySelector("source[srcset]")?.getAttribute("srcset");
+    const source = node.getAttribute("data-original-src") || node.getAttribute("data-original") || node.getAttribute("data-src") || node.getAttribute("data-lazy-src") || node.getAttribute("data-actualsrc") || node.getAttribute("data-rawsrc") || node.getAttribute("data-zooms") || pictureSource?.split(",").pop()?.trim().split(" ")[0] || node.getAttribute("src") || node.getAttribute("srcset")?.split(",").pop()?.trim().split(" ")[0];
     if (!source || source.startsWith("data:")) return "";
     try { return new URL(source, location.href).href; } catch { return ""; }
   }
@@ -128,6 +129,19 @@ function extractPage() {
       if (/^h[1-6]$/.test(tag)) blocks.push(`${"#".repeat(Number(tag[1]))} ${inline(node).trim()}`);
       else if (tag === "p" || tag === "blockquote") blocks.push(`${tag === "blockquote" ? "> " : ""}${inline(node).trim()}`);
       else if (tag === "pre") blocks.push("```\n" + node.textContent.trim() + "\n```");
+      else if (tag === "figure") {
+        const image = node.querySelector("img");
+        const source = image && imageUrl(image);
+        if (source) {
+          const caption = text(node.querySelector("figcaption"));
+          blocks.push(`![${caption || image.alt || "图片"}](${source})${caption ? `\n\n*${caption}*` : ""}`);
+        }
+        return;
+      } else if (tag === "img") {
+        const source = imageUrl(node);
+        if (source) blocks.push(`![${node.alt || "图片"}](${source})`);
+        return;
+      }
       else if (tag === "ul" || tag === "ol") [...node.children].filter((child) => child.tagName.toLowerCase() === "li").forEach((item, index) => blocks.push(`${tag === "ol" ? `${index + 1}.` : "-"} ${inline(item).trim()}`));
       else if (tag === "hr") blocks.push("---");
       [...node.children].forEach(visit);
@@ -169,8 +183,13 @@ function extractPage() {
     if (/(版权|版权所有|备案号|ICP备|公安备案|联系我们|关注我们|扫码关注|腾讯云开发者|社区规范|友情链接|隐私政策|服务条款)/i.test(value) && value.length < 2200) node.remove();
   });
   clone.querySelectorAll("img").forEach((node) => {
-    const source = node.getAttribute("data-src") || node.getAttribute("data-original") || node.getAttribute("data-lazy-src") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0];
+    const source = node.getAttribute("data-original-src") || node.getAttribute("data-original") || node.getAttribute("data-src") || node.getAttribute("data-lazy-src") || node.getAttribute("data-actualsrc") || node.getAttribute("data-rawsrc") || node.getAttribute("data-zooms") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",").pop()?.trim().split(" ")[0];
     if (source) node.setAttribute("src", source);
+  });
+  clone.querySelectorAll("picture source").forEach((node) => {
+    const image = node.parentElement?.querySelector("img");
+    const source = node.getAttribute("data-srcset") || node.getAttribute("srcset");
+    if (image && source && !image.getAttribute("src")) image.setAttribute("src", source.split(",").pop().trim().split(" ")[0]);
   });
   const semanticCandidates = [...clone.querySelectorAll("article,main,[role='main']")].sort((a, b) => score(b) - score(a));
   const sectionCandidates = [...clone.querySelectorAll("section")].sort((a, b) => score(b) - score(a));

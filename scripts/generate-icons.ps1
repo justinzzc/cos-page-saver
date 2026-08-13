@@ -30,7 +30,7 @@ foreach ($size in @(16, 32, 48, 128)) {
   $format = New-Object System.Drawing.StringFormat
   $format.Alignment = [System.Drawing.StringAlignment]::Center
   $format.LineAlignment = [System.Drawing.StringAlignment]::Center
-  $graphics.DrawString("C", $font, $brush, (New-Object System.Drawing.RectangleF(0, 0, 128, 128)), $format)
+  $graphics.DrawString("C", $font, $brush, (New-Object System.Drawing.RectangleF(0, 6, 128, 128)), $format)
   $output = Join-Path $iconDir ("icon-$size.png")
   $final = New-Object System.Drawing.Bitmap($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   $finalGraphics = [System.Drawing.Graphics]::FromImage($final)
