@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "云剪存",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "一键提取当前网页正文并保存为 Markdown 到腾讯云 COS，支持网页右键剪存。",
   "permissions": ["storage", "activeTab", "scripting", "contextMenus", "notifications"],
   "host_permissions": ["https://*/*", "http://*/*"],
