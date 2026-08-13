@@ -1,20 +1,26 @@
-import { readSettings, validateSettings } from "./storage.js";
+import { getDefaultProfile, getProfile, getProfileState, setLastUsedProfile, validateSettings } from "./storage.js";
 import { hmacSha1, sha1 } from "./crypto.js";
 import { createMarkdown, makeObjectKey } from "./markdown.js";
 
 const MENU_ID = "save-to-cloud-clip";
+const MENU_PROFILE_PREFIX = "save-to-cloud-clip-profile:";
+const MENU_CONFIG_ID = "save-to-cloud-clip-config";
 
-function setupContextMenu() {
-  chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({
-    id: MENU_ID,
-    title: "保存到云剪存",
-    contexts: ["page"],
-    documentUrlPatterns: ["http://*/*", "https://*/*"]
-  })).catch(() => {});
+async function setupContextMenu() {
+  const state = await getProfileState();
+  await chrome.contextMenus.removeAll();
+  chrome.contextMenus.create({ id: MENU_ID, title: "云剪存", contexts: ["page"], documentUrlPatterns: ["http://*/*", "https://*/*"] });
+  const defaultProfile = state.profiles.find((profile) => profile.id === state.defaultProfileId);
+  const lastProfile = state.profiles.find((profile) => profile.id === state.lastUsedProfileId);
+  const addProfile = (profile, title) => chrome.contextMenus.create({ id: `${MENU_PROFILE_PREFIX}${profile.id}`, parentId: MENU_ID, title, contexts: ["page"] });
+  if (defaultProfile) addProfile(defaultProfile, `默认：${defaultProfile.name}`);
+  if (lastProfile && lastProfile.id !== defaultProfile?.id) addProfile(lastProfile, `上一次：${lastProfile.name}`);
+  state.profiles.filter((profile) => profile.id !== defaultProfile?.id && profile.id !== lastProfile?.id).sort((a, b) => a.name.localeCompare(b.name, "zh-CN")).forEach((profile) => addProfile(profile, profile.name));
+  if (!state.profiles.length) chrome.contextMenus.create({ id: MENU_CONFIG_ID, parentId: MENU_ID, title: "请先配置 COS", contexts: ["page"] });
 }
 
-chrome.runtime.onInstalled.addListener(setupContextMenu);
-chrome.runtime.onStartup.addListener(setupContextMenu);
+chrome.runtime.onInstalled.addListener(() => { setupContextMenu().catch(() => {}); });
+chrome.runtime.onStartup.addListener(() => { setupContextMenu().catch(() => {}); });
 
 function normalizeEndpoint(endpoint) {
   const value = endpoint.trim();
@@ -219,28 +225,46 @@ function extractPage() {
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === "REFRESH_CONTEXT_MENU") {
+    setupContextMenu().then(() => sendResponse({ ok: true })).catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (message.type !== "SAVE_PAGE" && message.type !== "TEST_COS") return false;
   (async () => {
-    const settings = message.settings || await readSettings();
+    const settings = message.settings || (message.profileId ? await getProfile(message.profileId) : await getDefaultProfile());
+    if (!settings) throw new Error("请先在 COS 配置页面添加一个存储配置。");
     const validationError = validateSettings(settings);
     if (validationError) throw new Error(validationError);
     if (message.type === "TEST_COS") return testCosConnection(settings);
-    return savePage(message.tabId);
+    const result = await savePage(message.tabId, settings);
+    if (settings.id) {
+      await setLastUsedProfile(settings.id);
+      await setupContextMenu();
+    }
+    return result;
   })().then((result) => sendResponse({ ok: true, result })).catch((error) => sendResponse({ ok: false, error: error.message || "保存失败。" }));
   return true;
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== MENU_ID || !tab?.id) return;
-  savePage(tab.id).then((result) => {
+  if (info.menuItemId === MENU_CONFIG_ID) { chrome.runtime.openOptionsPage(); return; }
+  if (!String(info.menuItemId).startsWith(MENU_PROFILE_PREFIX) || !tab?.id) return;
+  const profileId = String(info.menuItemId).slice(MENU_PROFILE_PREFIX.length);
+  getProfile(profileId).then((settings) => {
+    if (!settings) throw new Error("该 COS 配置已不存在，请刷新右键菜单后重试。");
+    return savePage(tab.id, settings).then(async (result) => {
+      await setLastUsedProfile(profileId);
+      await setupContextMenu();
+      return result;
+    });
+  }).then((result) => {
     chrome.action.setBadgeText({ tabId: tab.id, text: "✓" });
     chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: "#6D4AFF" });
     chrome.notifications.create({ type: "basic", iconUrl: "icons/icon-128.png", title: "云剪存", message: `已保存：${result.key}` });
   }).catch((error) => chrome.notifications.create({ type: "basic", iconUrl: "icons/icon-128.png", title: "云剪存保存失败", message: error.message || "无法保存当前页面。" }));
 });
 
-async function savePage(tabId) {
-  const settings = await readSettings();
+async function savePage(tabId, settings) {
   const validationError = validateSettings(settings);
   if (validationError) throw new Error(validationError);
   const [result] = await chrome.scripting.executeScript({ target: { tabId }, func: extractPage });

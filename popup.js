@@ -1,11 +1,11 @@
-import { readSettings, validateSettings } from "./storage.js";
+import { getDefaultProfile, validateSettings } from "./storage.js";
 const configState = document.querySelector("#configState");
 const saveButton = document.querySelector("#saveButton");
 const result = document.querySelector("#result");
 const settingsButton = document.querySelector("#settingsButton");
-const settings = await readSettings();
-const error = validateSettings(settings);
-configState.textContent = error ? "尚未完成 COS 配置" : `已连接 ${settings.bucket}`;
+const settings = await getDefaultProfile();
+const error = settings ? validateSettings(settings) : "尚未添加 COS 配置";
+configState.textContent = error ? "尚未完成 COS 配置" : `默认：${settings.name} · ${settings.bucket}`;
 configState.className = `status ${error ? "warning" : "success"}`;
 if (error) saveButton.disabled = true;
 settingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
@@ -15,7 +15,7 @@ saveButton.addEventListener("click", async () => {
   result.hidden = true;
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const response = await chrome.runtime.sendMessage({ type: "SAVE_PAGE", tabId: tab.id });
+    const response = await chrome.runtime.sendMessage({ type: "SAVE_PAGE", tabId: tab.id, profileId: settings.id });
     if (!response?.ok) throw new Error(response?.error || "保存失败。");
     result.hidden = false;
     result.className = "result success-box";
