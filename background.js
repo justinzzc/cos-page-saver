@@ -103,9 +103,25 @@ function extractPage() {
   }
   function escape(value) { return value.replace(/[\\`*_[\]{}<>]/g, "\\$&").replace(/\s+$/g, ""); }
   function imageUrl(node) {
-    const pictureSource = node.parentElement?.querySelector("source[data-srcset],source[srcset]")?.getAttribute("data-srcset") || node.parentElement?.querySelector("source[srcset]")?.getAttribute("srcset");
-    const source = node.getAttribute("data-original-src") || node.getAttribute("data-original") || node.getAttribute("data-src") || node.getAttribute("data-lazy-src") || node.getAttribute("data-actualsrc") || node.getAttribute("data-rawsrc") || node.getAttribute("data-zooms") || pictureSource?.split(",").pop()?.trim().split(" ")[0] || node.getAttribute("src") || node.getAttribute("srcset")?.split(",").pop()?.trim().split(" ")[0];
-    if (!source || source.startsWith("data:")) return "";
+    const values = [];
+    const add = (value) => {
+      if (!value || value.startsWith("data:")) return;
+      if (value.startsWith("{") || value.startsWith("[")) {
+        try { Object.values(JSON.parse(value)).forEach((item) => add(typeof item === "string" ? item : item?.url || item?.src)); } catch { /* Ignore non-URL JSON. */ }
+        return;
+      }
+      value.split(",").forEach((item) => {
+        const candidate = item.trim().split(/\s+/)[0];
+        if (candidate) values.push(candidate);
+      });
+    };
+    ["data-gif-src", "data-gif", "data-animated-src", "data-original-src", "data-original", "data-src", "data-lazy-src", "data-actualsrc", "data-rawsrc", "data-zooms", "srcset", "src"].forEach((name) => add(node.getAttribute(name)));
+    node.parentElement?.querySelectorAll("source[data-gif-src],source[data-srcset],source[srcset]").forEach((source) => add(source.getAttribute("data-gif-src") || source.getAttribute("data-srcset") || source.getAttribute("srcset")));
+    const linked = node.closest("a[href]")?.getAttribute("href");
+    if (linked) add(linked);
+    const animated = values.find((value) => /(?:\.gif(?:$|[?#])|format=gif|animated|animation)/i.test(value));
+    const source = animated || values[0];
+    if (!source) return "";
     try { return new URL(source, location.href).href; } catch { return ""; }
   }
   function inline(node) {
@@ -183,7 +199,7 @@ function extractPage() {
     if (/(版权|版权所有|备案号|ICP备|公安备案|联系我们|关注我们|扫码关注|腾讯云开发者|社区规范|友情链接|隐私政策|服务条款)/i.test(value) && value.length < 2200) node.remove();
   });
   clone.querySelectorAll("img").forEach((node) => {
-    const source = node.getAttribute("data-original-src") || node.getAttribute("data-original") || node.getAttribute("data-src") || node.getAttribute("data-lazy-src") || node.getAttribute("data-actualsrc") || node.getAttribute("data-rawsrc") || node.getAttribute("data-zooms") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",").pop()?.trim().split(" ")[0];
+    const source = node.getAttribute("data-gif-src") || node.getAttribute("data-gif") || node.getAttribute("data-animated-src") || node.getAttribute("data-original-src") || node.getAttribute("data-original") || node.getAttribute("data-src") || node.getAttribute("data-lazy-src") || node.getAttribute("data-actualsrc") || node.getAttribute("data-rawsrc") || node.getAttribute("data-zooms") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",").pop()?.trim().split(" ")[0];
     if (source) node.setAttribute("src", source);
   });
   clone.querySelectorAll("picture source").forEach((node) => {
