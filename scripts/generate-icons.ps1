@@ -13,16 +13,24 @@ foreach ($size in @(16, 32, 48, 128)) {
   $graphics.ScaleTransform($scale, $scale)
   $green = [System.Drawing.ColorTranslator]::FromHtml("#00A870")
   $white = [System.Drawing.Color]::White
-  $graphics.Clear($green)
-  $font = New-Object System.Drawing.Font("Arial", ($size * 0.58), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+  $graphics.Clear([System.Drawing.Color]::Transparent)
+  $corner = 28
+  $rounded = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $rounded.AddArc(4, 4, $corner, $corner, 180, 90)
+  $rounded.AddArc(96, 4, $corner, $corner, 270, 90)
+  $rounded.AddArc(96, 96, $corner, $corner, 0, 90)
+  $rounded.AddArc(4, 96, $corner, $corner, 90, 90)
+  $rounded.CloseFigure()
+  $graphics.FillPath((New-Object System.Drawing.SolidBrush($green)), $rounded)
+  $font = New-Object System.Drawing.Font("Arial", ($size * 0.72), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
   $brush = New-Object System.Drawing.SolidBrush($white)
   $format = New-Object System.Drawing.StringFormat
   $format.Alignment = [System.Drawing.StringAlignment]::Center
   $format.LineAlignment = [System.Drawing.StringAlignment]::Center
-  $graphics.DrawString("C", $font, $brush, (New-Object System.Drawing.RectangleF(0, 4, 128, 120)), $format)
+  $graphics.DrawString("C", $font, $brush, (New-Object System.Drawing.RectangleF(0, -1, 128, 130)), $format)
   $output = Join-Path $iconDir ("icon-$size.png")
   $bitmap.Save($output, [System.Drawing.Imaging.ImageFormat]::Png)
-  $format.Dispose(); $font.Dispose(); $brush.Dispose(); $graphics.Dispose(); $bitmap.Dispose()
+  $format.Dispose(); $font.Dispose(); $brush.Dispose(); $rounded.Dispose(); $graphics.Dispose(); $bitmap.Dispose()
 }
 
 Write-Output "Generated icons/icon-16.png, icon-32.png, icon-48.png, icon-128.png"
