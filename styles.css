@@ -6,6 +6,15 @@
 .secondary { padding: 9px 12px; border: 1px solid #cbd5df; background: #fff; color: #52606d; }
 .secondary:hover { border-color: #00a870; color: #087f5b; }
 .editor-panel { margin-top: 18px; }
+.editor-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 18px; align-items: start; }
+.editor-layout .editor-panel { margin-top: 0; }
+.profile-sidebar { min-width: 0; padding: 20px; }
+.profile-sidebar .panel-title { align-items: flex-start; }
+.profile-sidebar .panel-title h2 { font-size: 15px; }
+.profile-sidebar .profile-list { margin-bottom: 0; }
+.profile-sidebar .profile-item { display: block; padding: 11px 12px; }
+.profile-sidebar .profile-details { width: 100%; }
+.profile-sidebar .profile-actions { margin-top: 10px; }
 .profile-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px; }
 .profile-details { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; gap: 5px 9px; padding: 0; border: 0; background: transparent; color: #1f2933; text-align: left; }
 .profile-details strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -18,4 +27,5 @@
 .secret-field input { padding-right: 40px; }
 .visibility-button { position: absolute; top: 50%; right: 8px; width: 24px; height: 24px; transform: translateY(-50%); padding: 0; background: transparent; color: #718096; font-size: 14px; }
 .visibility-button:hover { color: #00a870; }
+@media (max-width: 760px) { .editor-layout { grid-template-columns: 1fr; } .profile-sidebar .profile-list { display: flex; overflow-x: auto; } .profile-sidebar .profile-item { min-width: 220px; } }
 @media (max-width: 620px) { .profile-item { align-items: stretch; flex-direction: column; gap: 10px; } .profile-actions { flex-wrap: wrap; } }
