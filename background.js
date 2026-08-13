@@ -135,6 +135,21 @@ function extractPage() {
     visit(root);
     return blocks.filter(Boolean).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
   }
+  function trimLeadingNoise(root) {
+    const headings = [...root.querySelectorAll("h2,h3,h4")];
+    const start = headings.find((node) => /^(引言|正文|一、|一\.|第一章|第[一二三四五六七八九十]+章)/.test(text(node)));
+    if (!start) return;
+    let current = start;
+    for (let depth = 0; depth < 4 && current.parentElement && current.parentElement !== root; depth += 1) current = current.parentElement;
+    const parent = current.parentElement;
+    if (!parent) return;
+    let sibling = parent.firstElementChild;
+    while (sibling && sibling !== current) {
+      const next = sibling.nextElementSibling;
+      sibling.remove();
+      sibling = next;
+    }
+  }
   function score(node) {
     const value = text(node);
     if (!value || value.length < 200) return -1;
@@ -162,6 +177,7 @@ function extractPage() {
   const candidates = semanticCandidates.length ? semanticCandidates : sectionCandidates.length ? sectionCandidates : [...clone.querySelectorAll("div")].sort((a, b) => score(b) - score(a));
   const content = candidates[0] || clone.body;
   if (!content) throw new Error("无法读取当前页面内容。");
+  trimLeadingNoise(content);
   const pageMeta = metadata();
   const title = pageMeta.title || document.title || text(content.querySelector("h1")) || "未命名页面";
   return { title, byline: pageMeta.byline, excerpt: pageMeta.excerpt, url: location.href, textContent: text(content), markdown: toMarkdown(content) };
