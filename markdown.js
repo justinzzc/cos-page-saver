@@ -23,7 +23,7 @@ export function htmlToMarkdown(root) {
     const tag = node.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)) blocks.push(`${"#".repeat(Number(tag[1]))} ${inlineMarkdown(node).trim()}`);
     else if (tag === "p" || tag === "blockquote") blocks.push(`${tag === "blockquote" ? "> " : ""}${inlineMarkdown(node).trim()}`);
-    else if (tag === "pre") blocks.push("```\\n" + node.textContent.trim() + "\\n```");
+    else if (tag === "pre") blocks.push("```\n" + node.textContent.trim() + "\n```");
     else if (tag === "ul" || tag === "ol") {
       [...node.children].filter((child) => child.tagName.toLowerCase() === "li").forEach((item, index) => blocks.push(`${tag === "ol" ? `${index + 1}.` : "-"} ${inlineMarkdown(item).trim()}`));
     } else if (tag === "hr") blocks.push("---");

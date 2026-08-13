@@ -1,6 +1,6 @@
-# COS 页面剪存
+# 云剪存
 
-一个无后端的 Chrome Manifest V3 扩展：从当前网页提取主要正文，生成 Markdown，并直接上传到腾讯云 COS。
+一个无后端的 Chrome Manifest V3 扩展：从当前网页提取主要正文，生成 Markdown，并直接上传到腾讯云 COS。支持扩展 Popup 和网页右键菜单触发。
 
 当前版本使用 COS 无请求头签名模式，避免浏览器无法控制的 `Host` 请求头导致 `SignatureDoesNotMatch`。
 
@@ -12,6 +12,8 @@ COS 对象路径可以保留中文标题：请求 URL 使用 UTF-8 百分号编�
 2. 点击“加载已解压的扩展程序”，选择本项目目录。
 3. 点击扩展图标，进入“打开 COS 配置”，填写 Endpoint、Region、SecretId、SecretKey 和 Bucket。
 4. 在 COS Bucket 的 CORS 中允许扩展发起 `PUT` 请求，至少放行 `Content-Type` 和 `Host` 请求头。
+
+在网页空白处点击右键，选择“保存到云剪存”，也可以直接触发当前页面剪存。
 
 ## 打包
 

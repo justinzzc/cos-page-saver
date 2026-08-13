@@ -2,6 +2,20 @@ import { readSettings, validateSettings } from "./storage.js";
 import { hmacSha1, sha1 } from "./crypto.js";
 import { createMarkdown, makeObjectKey } from "./markdown.js";
 
+const MENU_ID = "save-to-cloud-clip";
+
+function setupContextMenu() {
+  chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({
+    id: MENU_ID,
+    title: "保存到云剪存",
+    contexts: ["page"],
+    documentUrlPatterns: ["http://*/*", "https://*/*"]
+  })).catch(() => {});
+}
+
+chrome.runtime.onInstalled.addListener(setupContextMenu);
+chrome.runtime.onStartup.addListener(setupContextMenu);
+
 function normalizeEndpoint(endpoint) {
   const value = endpoint.trim();
   const parsed = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
@@ -113,7 +127,7 @@ function extractPage() {
       const tag = node.tagName.toLowerCase();
       if (/^h[1-6]$/.test(tag)) blocks.push(`${"#".repeat(Number(tag[1]))} ${inline(node).trim()}`);
       else if (tag === "p" || tag === "blockquote") blocks.push(`${tag === "blockquote" ? "> " : ""}${inline(node).trim()}`);
-      else if (tag === "pre") blocks.push("```\\n" + node.textContent.trim() + "\\n```");
+      else if (tag === "pre") blocks.push("```\n" + node.textContent.trim() + "\n```");
       else if (tag === "ul" || tag === "ol") [...node.children].filter((child) => child.tagName.toLowerCase() === "li").forEach((item, index) => blocks.push(`${tag === "ol" ? `${index + 1}.` : "-"} ${inline(item).trim()}`));
       else if (tag === "hr") blocks.push("---");
       [...node.children].forEach(visit);
@@ -134,12 +148,18 @@ function extractPage() {
   }
   const clone = document.cloneNode(true);
   clone.querySelectorAll("script,style,noscript,link,nav,header,footer,aside,form,iframe,template,button,[aria-hidden='true'],[role='navigation'],[role='complementary']").forEach((node) => node.remove());
-  clone.querySelectorAll("[class*='comment' i],[class*='advert' i],[class*='recommend' i],[id*='comment' i],[id*='advert' i]").forEach((node) => node.remove());
+  clone.querySelectorAll("[class*='comment' i],[class*='advert' i],[class*='recommend' i],[id*='comment' i],[id*='advert' i],[class*='footer' i],[id*='footer' i]").forEach((node) => node.remove());
+  clone.querySelectorAll("div,section").forEach((node) => {
+    const value = text(node);
+    if (/(版权|版权所有|备案号|ICP备|公安备案|联系我们|关注我们|扫码关注|腾讯云开发者|社区规范|友情链接|隐私政策|服务条款)/i.test(value) && value.length < 2200) node.remove();
+  });
   clone.querySelectorAll("img").forEach((node) => {
     const source = node.getAttribute("data-src") || node.getAttribute("data-original") || node.getAttribute("data-lazy-src") || node.getAttribute("src") || node.getAttribute("srcset")?.split(",")[0]?.trim().split(" ")[0];
     if (source) node.setAttribute("src", source);
   });
-  const candidates = [...clone.querySelectorAll("article,main,[role='main'],section,div")].sort((a, b) => score(b) - score(a));
+  const semanticCandidates = [...clone.querySelectorAll("article,main,[role='main']")].sort((a, b) => score(b) - score(a));
+  const sectionCandidates = [...clone.querySelectorAll("section")].sort((a, b) => score(b) - score(a));
+  const candidates = semanticCandidates.length ? semanticCandidates : sectionCandidates.length ? sectionCandidates : [...clone.querySelectorAll("div")].sort((a, b) => score(b) - score(a));
   const content = candidates[0] || clone.body;
   if (!content) throw new Error("无法读取当前页面内容。");
   const pageMeta = metadata();
@@ -154,12 +174,28 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const validationError = validateSettings(settings);
     if (validationError) throw new Error(validationError);
     if (message.type === "TEST_COS") return testCosConnection(settings);
-    const [result] = await chrome.scripting.executeScript({ target: { tabId: message.tabId }, func: extractPage });
-    const page = result?.result;
-    if (!page) throw new Error("无法提取当前页面内容，请确认页面允许脚本运行。");
-    const markdown = createMarkdown(page);
-    const key = `${String(settings.objectPrefix || "clips").replace(/^\/+|\/+$/g, "")}/${makeObjectKey(page.title, new Date(), page.url).replace(/^clips\//, "")}`;
-    return uploadToCos(settings, key, markdown);
+    return savePage(message.tabId);
   })().then((result) => sendResponse({ ok: true, result })).catch((error) => sendResponse({ ok: false, error: error.message || "保存失败。" }));
   return true;
 });
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== MENU_ID || !tab?.id) return;
+  savePage(tab.id).then((result) => {
+    chrome.action.setBadgeText({ tabId: tab.id, text: "✓" });
+    chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: "#6D4AFF" });
+    chrome.notifications.create({ type: "basic", iconUrl: "icons/icon-128.png", title: "云剪存", message: `已保存：${result.key}` });
+  }).catch((error) => chrome.notifications.create({ type: "basic", iconUrl: "icons/icon-128.png", title: "云剪存保存失败", message: error.message || "无法保存当前页面。" }));
+});
+
+async function savePage(tabId) {
+  const settings = await readSettings();
+  const validationError = validateSettings(settings);
+  if (validationError) throw new Error(validationError);
+  const [result] = await chrome.scripting.executeScript({ target: { tabId }, func: extractPage });
+  const page = result?.result;
+  if (!page) throw new Error("无法提取当前页面内容，请确认页面允许脚本运行。");
+  const markdown = createMarkdown(page);
+  const key = `${String(settings.objectPrefix || "clips").replace(/^\/+|\/+$/g, "")}/${makeObjectKey(page.title, new Date(), page.url).replace(/^clips\//, "")}`;
+  return uploadToCos(settings, key, markdown);
+}
