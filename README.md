@@ -32,7 +32,22 @@ gh auth login -h github.com
 .\scripts\publish-release.ps1
 ```
 
-发布脚本会读取 `manifest.json` 中的版本号，自动打包并创建对应的 GitHub Release。也可以使用 `-Draft` 创建草稿，或使用 `-Prerelease` 创建预发布版本。
+发布脚本会读取 `manifest.json` 中的版本号，自动打包并创建对应的 GitHub Release。
+
+常用命令：
+
+```powershell
+# 创建正式 Release，直接公开发布
+.\scripts\publish-release.ps1
+
+# 创建草稿 Release，上传文件但暂不公开
+.\scripts\publish-release.ps1 -Draft
+
+# 创建预发布 Release，用于测试版本
+.\scripts\publish-release.ps1 -Prerelease
+```
+
+`-Draft` 适合先检查 Release 标题、说明和 CRX/ZIP 附件，之后在 GitHub 页面手动点击“发布 Release”。`-Prerelease` 会将版本标记为预发布，不建议普通用户直接使用。
 
 图标源文件为 `icons/icon.svg`，PNG 尺寸由 `scripts/generate-icons.ps1` 生成。
 
