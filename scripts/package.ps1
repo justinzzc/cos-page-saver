@@ -4,14 +4,20 @@ $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root "manifest.json"
 $manifest = Get-Content -Raw -Encoding UTF8 $manifestPath | ConvertFrom-Json
 $dist = Join-Path $root "dist"
-$secrets = Join-Path $root ".secrets"
+$legacySecrets = Join-Path $root ".secrets"
+$secrets = Join-Path $env:LOCALAPPDATA "CosPageSaver"
 $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("cos-page-saver-" + [guid]::NewGuid().ToString("N"))
 $zip = Join-Path $dist ("cos-page-saver-v" + $manifest.version + ".zip")
 $crx = Join-Path $dist ("cos-page-saver-v" + $manifest.version + ".crx")
 $key = Join-Path $secrets "cos-page-saver.pem"
+$legacyKey = Join-Path $legacySecrets "cos-page-saver.pem"
 
-New-Item -ItemType Directory -Force -Path $dist, $stage | Out-Null
+New-Item -ItemType Directory -Force -Path $dist, $stage, $secrets | Out-Null
 New-Item -ItemType Directory -Force -Path $secrets | Out-Null
+
+if (-not (Test-Path -LiteralPath $key) -and (Test-Path -LiteralPath $legacyKey)) {
+  Move-Item -LiteralPath $legacyKey -Destination $key -Force
+}
 
 $files = @(
   "manifest.json", "background.js", "crypto.js", "markdown.js", "storage.js",

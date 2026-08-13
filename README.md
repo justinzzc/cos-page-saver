@@ -23,7 +23,7 @@ Popup 的“保存当前页面”使用默认配置。在网页空白处点击�
 .\scripts\package.ps1
 ```
 
-产物会生成到 `dist/`，该目录已加入 `.gitignore`。脚本会同时生成 ZIP 和 CRX3；CRX 使用本机 `.secrets/cos-page-saver.pem` 签名，该私钥不会提交到仓库。
+产物会生成到 `dist/`，该目录已加入 `.gitignore`。脚本会同时生成 ZIP 和 CRX3；CRX 使用工程目录外的 `%LOCALAPPDATA%\CosPageSaver\cos-page-saver.pem` 签名，该私钥不会进入扩展目录或提交到仓库。旧版本若存在 `.secrets\cos-page-saver.pem`，脚本会自动迁移到新位置。
 
 发布 GitHub Release（需要先安装并登录 GitHub CLI）：
 
