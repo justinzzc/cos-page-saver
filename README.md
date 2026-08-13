@@ -23,7 +23,7 @@ COS 对象路径可以保留中文标题：请求 URL 使用 UTF-8 百分号编�
 .\scripts\package.ps1
 ```
 
-产物会生成到 `dist/`，该目录已加入 `.gitignore`，可直接在 Chrome Web Store 开发者后台上传 ZIP，或作为备份文件保存。
+产物会生成到 `dist/`，该目录已加入 `.gitignore`。脚本会同时生成 ZIP 和 CRX3；CRX 使用本机 `.secrets/cos-page-saver.pem` 签名，该私钥不会提交到仓库。
 
 图标源文件为 `icons/icon.svg`，PNG 尺寸由 `scripts/generate-icons.ps1` 生成。
 
