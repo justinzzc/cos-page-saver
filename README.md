@@ -25,6 +25,15 @@ COS 对象路径可以保留中文标题：请求 URL 使用 UTF-8 百分号编�
 
 产物会生成到 `dist/`，该目录已加入 `.gitignore`。脚本会同时生成 ZIP 和 CRX3；CRX 使用本机 `.secrets/cos-page-saver.pem` 签名，该私钥不会提交到仓库。
 
+发布 GitHub Release（需要先安装并登录 GitHub CLI）：
+
+```powershell
+gh auth login -h github.com
+.\scripts\publish-release.ps1
+```
+
+发布脚本会读取 `manifest.json` 中的版本号，自动打包并创建对应的 GitHub Release。也可以使用 `-Draft` 创建草稿，或使用 `-Prerelease` 创建预发布版本。
+
 图标源文件为 `icons/icon.svg`，PNG 尺寸由 `scripts/generate-icons.ps1` 生成。
 
 ## 目录说明
