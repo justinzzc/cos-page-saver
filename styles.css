@@ -5,3 +5,17 @@
 .profile-item:hover, .profile-item.selected { border-color: #00a870; color: #087f5b; background: #f0faf6; }
 .secondary { padding: 9px 12px; border: 1px solid #cbd5df; background: #fff; color: #52606d; }
 .secondary:hover { border-color: #00a870; color: #087f5b; }
+.editor-panel { margin-top: 18px; }
+.profile-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px; }
+.profile-details { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; gap: 5px 9px; padding: 0; border: 0; background: transparent; color: #1f2933; text-align: left; }
+.profile-details strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-details small { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #718096; }
+.profile-badge { padding: 2px 6px; border-radius: 4px; background: #eaf7f1; color: #087f5b; font-size: 11px; }
+.profile-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.profile-action { padding: 6px 8px; border: 1px solid #d8dee6; background: #fff; color: #52606d; font-size: 12px; }
+.profile-action:hover:not(:disabled) { border-color: #00a870; color: #087f5b; }
+.secret-field { position: relative; }
+.secret-field input { padding-right: 40px; }
+.visibility-button { position: absolute; top: 50%; right: 8px; width: 24px; height: 24px; transform: translateY(-50%); padding: 0; background: transparent; color: #718096; font-size: 14px; }
+.visibility-button:hover { color: #00a870; }
+@media (max-width: 620px) { .profile-item { align-items: stretch; flex-direction: column; gap: 10px; } .profile-actions { flex-wrap: wrap; } }
